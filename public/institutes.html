@@ -77,6 +77,8 @@
             const [selectedInstitutes, setSelectedInstitutes] = useState([]);
             const [isDownloading, setIsDownloading] = useState(false);
             const [showAddInstituteModal, setShowAddInstituteModal] = useState(false);
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [instituteToDelete, setInstituteToDelete] = useState(null);
 
             const [filters, setFilters] = useState({
                 priority: 'all',
@@ -110,7 +112,7 @@
                     setLoading(false);
                 }
             };
-            
+
             useEffect(() => {
                 fetchInstitutes();
             }, [showAddInstituteModal]);
@@ -120,16 +122,16 @@
                     alert('لا يمكن تنزيل رمز QR، لا يوجد توكن تسجيل.');
                     return;
                 }
-            
+
                 const registrationUrl = `${window.location.origin}/custom-register.html?token=${institute.registration_token}`;
-            
+
                 // Use the qrcode library to generate a data URL with increased size
                 QRCode.toDataURL(registrationUrl, { errorCorrectionLevel: 'H', width: 500, height: 500 }, function (err, url) {
                     if (err) {
                         console.error('Error generating QR code:', err);
                         return;
                     }
-                    
+
                     // Create a temporary link element to trigger the download
                     const link = document.createElement('a');
                     link.href = url;
@@ -143,12 +145,12 @@
             const handleDownloadSelectedQrCodes = () => {
                 setIsDownloading(true);
                 const institutesToDownload = institutes.filter(institute => selectedInstitutes.includes(institute.institute_id));
-                
+
                 institutesToDownload.forEach((institute, index) => {
                     // Slight delay to prevent browser from blocking multiple downloads
                     setTimeout(() => {
                         handleDownloadQrCode(institute);
-                    }, index * 500); 
+                    }, index * 500);
                 });
 
                 setTimeout(() => {
@@ -156,6 +158,33 @@
                     setSelectedInstitutes([]);
                 }, institutesToDownload.length * 500 + 1000);
             };
+            const handleDeleteInstitute = (institute) => {
+                setInstituteToDelete(institute);
+                setShowDeleteModal(true);
+            };
+            const handleConfirmDelete = async () => {
+                const id = instituteToDelete.institute_id;
+                setShowDeleteModal(false);
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/api/institutes/${id}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.status === 200) {
+                        fetchInstitutes(); // Refresh the list
+                    } else {
+                        setError('فشل حذف المؤسسة.');
+                    }
+                } catch (error) {
+                    setError('خطأ في الاتصال بالخادم.');
+                } finally {
+                    setLoading(false);
+                    setInstituteToDelete(null);
+                }
+            };
+
 
             const handleFilterChange = (e) => {
                 const { name, value } = e.target;
@@ -166,7 +195,7 @@
                 const { value } = e.target;
                 setFilters(prev => ({ ...prev, search: value }));
             };
-            
+
             const handleTableInstituteSelect = (id) => {
                 setSelectedInstitutes(prev => {
                     if (prev.includes(id)) {
@@ -176,7 +205,7 @@
                     }
                 });
             };
-            
+
             const handleSelectAll = () => {
                 if (selectedInstitutes.length === filteredInstitutes.length) {
                     setSelectedInstitutes([]);
@@ -194,7 +223,7 @@
                     const matchesSearch = instituteName.includes(searchTerm);
 
                     const matchesPriority = filters.priority === 'all' || institute.institute_priority === filters.priority;
-                    
+
                     const matchesVip = filters.isVip === 'all' || (filters.isVip === 'vip' && institute.is_vip) || (filters.isVip === 'not-vip' && !institute.is_vip);
 
                     return matchesSearch && matchesPriority && matchesVip;
@@ -251,7 +280,7 @@
                         onClose();
                     }
                 };
-                
+
                 const handleSubmit = async (e) => {
                     e.preventDefault();
                     setLoading(true);
@@ -355,7 +384,52 @@
                     </div>
                 );
             };
-            
+            const DeleteConfirmationModal = ({ item, type, onClose, onConfirm }) => {
+                const [countdown, setCountdown] = useState(5);
+                const [canConfirm, setCanConfirm] = useState(false);
+
+                useEffect(() => {
+                    const timer = setInterval(() => {
+                        setCountdown(prev => prev - 1);
+                    }, 1000);
+
+                    const enableButtonTimer = setTimeout(() => {
+                        setCanConfirm(true);
+                    }, 5000);
+
+                    return () => {
+                        clearInterval(timer);
+                        clearTimeout(enableButtonTimer);
+                    };
+                }, []);
+
+                const itemType = type === 'candidate' ? 'مرشح' : 'مؤسسة';
+
+                return (
+                    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                        <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm text-center">
+                            <h3 className="text-xl font-bold text-red-600 mb-4">تأكيد الحذف</h3>
+                            <p className="text-gray-700 mb-6">هل أنت متأكد أنك تريد حذف هذا {itemType}؟</p>
+                            <p className="font-bold text-gray-800 mb-4">{item.first_name || item.institute_name}</p>
+                            <div className="flex justify-between items-center mt-6 space-x-2 space-x-reverse">
+                                <button
+                                    onClick={onClose}
+                                    className="w-full bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                >
+                                    إلغاء
+                                </button>
+                                <button
+                                    onClick={onConfirm}
+                                    disabled={!canConfirm}
+                                    className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    {canConfirm ? 'تأكيد الحذف' : `تأكيد بعد ${countdown}`}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
             // Custom Modal component for showing success/error messages
             const CustomModal = ({ title, message, type, onClose }) => {
                 const titleColor = type === 'success' ? 'text-green-600' : 'text-red-600';
@@ -448,7 +522,7 @@
                                                 <option value="low">منخفضة</option>
                                             </select>
                                         </div>
-                                        
+
                                         <div className="w-full">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">تصفية VIP</label>
                                             <select
@@ -475,7 +549,7 @@
                                             />
                                         </div>
                                     </div>
-                                    
+
                                     {selectedInstitutes.length > 0 && (
                                         <div className="w-full md:w-auto text-right mb-4">
                                             <button
@@ -547,6 +621,7 @@
                                                                     <i className="fas fa-qrcode ml-2"></i>تنزيل QR Code
                                                                 </button>
                                                             </td>
+                                                            <td className="px-6 py-4"><button onClick={() => handleDeleteInstitute(institute)} className="text-red-500 hover:text-red-700 transition-colors"><i className="fas fa-trash-alt"></i></button></td>
                                                         </tr>
                                                     ))
                                                 ) : (
@@ -568,13 +643,14 @@
                                     <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
                                 </div>
                             )}
-                            
+
                             {showAddInstituteModal && (
-                                <AddInstituteModal 
+                                <AddInstituteModal
                                     onClose={() => setShowAddInstituteModal(false)}
                                     onInstituteAdded={fetchInstitutes}
                                 />
                             )}
+                            {showDeleteModal && (<DeleteConfirmationModal item={instituteToDelete} type="institute" onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} />)}
 
                         </main>
                     </div>
