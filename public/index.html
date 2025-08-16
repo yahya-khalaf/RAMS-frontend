@@ -87,26 +87,20 @@
                 status: 'all',
                 search: ''
             });
-            // const [apiBaseUrl, setApiBaseUrl] = useState('http://localhost:3000');
-            const [apiBaseUrl, setApiBaseUrl] = useState('');
+            const [apiBaseUrl, setApiBaseUrl] = useState('https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net');
+            // const [apiBaseUrl, setApiBaseUrl] = useState('');
             const [showConfigModal, setShowConfigModal] = useState(false);
             const [configInput, setConfigInput] = useState(apiBaseUrl);
-
-            // State for the loading state of the invitation button
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [candidateToDelete, setCandidateToDelete] = useState(null);
             const [isSendingInvitations, setIsSendingInvitations] = useState(false);
-            // State for the custom success/error pop-up modal
             const [showInvitationResultModal, setShowInvitationResultModal] = useState(false);
             const [invitationResult, setInvitationResult] = useState({ sent: 0, failed: 0, type: '' });
             const [copyStatus, setCopyStatus] = useState(false);
-
-            // New state to trigger a fetch after the modal is closed
             const [shouldFetchAfterModal, setShouldFetchAfterModal] = useState(false);
-
-            // NEW: Invitation Modal Logic
             const [showInvitationModal, setShowInvitationModal] = useState(false);
             const [selectedCandidates, setSelectedCandidates] = useState([]);
             const [invitationMessage, setInvitationMessage] = useState({ text: '', type: '' });
-            // NEW: Selected candidates for the main table
             const [selectedTableCandidates, setSelectedTableCandidates] = useState([]);
 
 
@@ -179,7 +173,33 @@
             const handleSearchChange = (e) => {
                 setFilters(prev => ({ ...prev, search: e.target.value }));
             };
+            const handleDeleteCandidate = (candidate) => {
+                setCandidateToDelete(candidate);
+                setShowDeleteModal(true);
+            };
 
+            const handleConfirmDelete = async () => {
+                const id = candidateToDelete.candidate_id;
+                setShowDeleteModal(false);
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/api/candidates/${id}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.status === 200) {
+                        fetchCandidates(); // Refresh the list
+                    } else {
+                        setError('فشل حذف المرشح.');
+                    }
+                } catch (error) {
+                    setError('خطأ في الاتصال بالخادم.');
+                } finally {
+                    setLoading(false);
+                    setCandidateToDelete(null);
+                }
+            };
             // This now just toggles the state, and the useEffect will handle the fetch
             const handleRefresh = () => {
                 setShouldFetchAfterModal(prev => !prev);
@@ -330,8 +350,7 @@
 
             // NEW: Function to copy the registration link
             const handleCopyLink = () => {
-                const registrationLink = `${window.location.origin}/register`;
-                
+                const registrationLink = `${window.location.origin}/register.html`;
                 // Use document.execCommand for better compatibility in iframes
                 const el = document.createElement('textarea');
                 el.value = registrationLink;
@@ -454,10 +473,56 @@
                     </div>
                    <nav className="font-cairo space-y-2">
                         <a href="#" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">لوحة التحكم</a>
-                        <a href="/institutes" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">قائمة المؤسسات</a>
+                        <a href="/institutes.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">قائمة المؤسسات</a>
                     </nav>
                 </aside>
             );
+            const DeleteConfirmationModal = ({ item, type, onClose, onConfirm }) => {
+                const [countdown, setCountdown] = useState(5);
+                const [canConfirm, setCanConfirm] = useState(false);
+
+                useEffect(() => {
+                    const timer = setInterval(() => {
+                        setCountdown(prev => prev - 1);
+                    }, 1000);
+
+                    const enableButtonTimer = setTimeout(() => {
+                        setCanConfirm(true);
+                    }, 5000);
+
+                    return () => {
+                        clearInterval(timer);
+                        clearTimeout(enableButtonTimer);
+                    };
+                }, []);
+                
+                const itemType = type === 'candidate' ? 'مرشح' : 'مؤسسة';
+
+                return (
+                    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                        <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm text-center">
+                            <h3 className="text-xl font-bold text-red-600 mb-4">تأكيد الحذف</h3>
+                            <p className="text-gray-700 mb-6">هل أنت متأكد أنك تريد حذف هذا {itemType}؟</p>
+                            <p className="font-bold text-gray-800 mb-4">{item.first_name || item.institute_name}</p>
+                            <div className="flex justify-between items-center mt-6 space-x-2 space-x-reverse">
+                                <button
+                                    onClick={onClose}
+                                    className="w-full bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                >
+                                    إلغاء
+                                </button>
+                                <button
+                                    onClick={onConfirm}
+                                    disabled={!canConfirm}
+                                    className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    {canConfirm ? 'تأكيد الحذف' : `تأكيد بعد ${countdown}`}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             return (
                 <div className="flex h-screen font-cairo bg-[#1b2a39]" dir="rtl">
@@ -609,6 +674,14 @@
                                                                 <td className="px-6 py-4">
                                                                     <StatusBadge status={candidate.state} />
                                                                 </td>
+                                                                <td className="px-6 py-4">
+                                                                    <button
+                                                                        onClick={() => handleDeleteCandidate(candidate)}
+                                                                        className="text-red-500 hover:text-red-700 transition-colors"
+                                                                    >
+                                                                        <i className="fas fa-trash-alt"></i>
+                                                                    </button>
+                                                                </td>
                                                             </tr>
                                                         ))
                                                     ) : (
@@ -628,6 +701,15 @@
                                         </div>
                                     </div>
                                 </>
+                            )}
+                            
+                            {showDeleteModal && (
+                                <DeleteConfirmationModal
+                                    item={candidateToDelete}
+                                    type="candidate"
+                                    onClose={() => setShowDeleteModal(false)}
+                                    onConfirm={handleConfirmDelete}
+                                />
                             )}
 
                             {showInvitationResultModal && (

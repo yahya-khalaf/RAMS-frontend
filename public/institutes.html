@@ -83,7 +83,7 @@
                 isVip: 'all',
                 search: ''
             });
-            const [apiBaseUrl, setApiBaseUrl] = useState('');
+            const [apiBaseUrl, setApiBaseUrl] = useState('https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net');
 
             const fetchInstitutes = async () => {
                 setLoading(true);
@@ -121,7 +121,7 @@
                     return;
                 }
             
-                const registrationUrl = `${window.location.origin}/custom-register?token=${institute.registration_token}`;
+                const registrationUrl = `${window.location.origin}/custom-register.html?token=${institute.registration_token}`;
             
                 // Use the qrcode library to generate a data URL with increased size
                 QRCode.toDataURL(registrationUrl, { errorCorrectionLevel: 'H', width: 500, height: 500 }, function (err, url) {
