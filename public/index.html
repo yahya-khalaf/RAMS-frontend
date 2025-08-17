@@ -2,28 +2,18 @@
 <html lang="ar" dir="rtl">
 
 <head>
-
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم </title>
 
-
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
-
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=Cardo:wght@700&family=Cairo:wght@400;600;700&display=swap"
         rel="stylesheet">
 
@@ -38,7 +28,6 @@
 
         body {
             background-color: #1b2a39;
-            /* Changed to Dark Blue */
         }
 
         .loader {
@@ -57,7 +46,8 @@
         }
 
         .config-modal,
-        .invitation-modal {
+        .invitation-modal,
+        .login-modal {
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
         }
@@ -67,9 +57,80 @@
 <body class="bg-[#1b2a39]" style="direction: rtl; text-align: right;">
     <div id="root"></div>
 
-
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
+
+        // --- NEW: Login Modal Component ---
+        const LoginModal = ({ onLoginSuccess }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            // IMPORTANT: Set your backend URL here
+            const apiBaseUrl = 'https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net';
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                setError('');
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.token) {
+                        onLoginSuccess(data.token);
+                    } else {
+                        setError(data.message || 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.');
+                    }
+                } catch (err) {
+                    console.error('Login request failed:', err);
+                    setError('حدث خطأ أثناء الاتصال بالخادم.');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            return (
+                <div className="login-modal fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm text-center">
+                        <h2 className="text-2xl font-bold text-[#1b2a39] mb-6 font-cairo">تسجيل الدخول للمشرف</h2>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="اسم المستخدم"
+                                className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-right"
+                                required
+                            />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="كلمة المرور"
+                                className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-right"
+                                required
+                            />
+                            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-[#15a9b2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#0f7a81] transition-colors disabled:bg-gray-400"
+                            >
+                                {isLoading ? 'جاري الدخول...' : 'تسجيل الدخول'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
 
         const MenuIcon = (props) => (
             <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -78,6 +139,9 @@
         );
 
         const App = () => {
+            // --- NEW: Authentication State ---
+            const [authToken, setAuthToken] = useState(localStorage.getItem('adminToken'));
+
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [candidates, setCandidates] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -88,32 +152,49 @@
                 search: ''
             });
             const [apiBaseUrl, setApiBaseUrl] = useState('https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net');
-            // const [apiBaseUrl, setApiBaseUrl] = useState('');
-            const [showConfigModal, setShowConfigModal] = useState(false);
-            const [configInput, setConfigInput] = useState(apiBaseUrl);
             const [showDeleteModal, setShowDeleteModal] = useState(false);
             const [candidateToDelete, setCandidateToDelete] = useState(null);
             const [isSendingInvitations, setIsSendingInvitations] = useState(false);
             const [showInvitationResultModal, setShowInvitationResultModal] = useState(false);
             const [invitationResult, setInvitationResult] = useState({ sent: 0, failed: 0, type: '' });
             const [copyStatus, setCopyStatus] = useState(false);
-            const [shouldFetchAfterModal, setShouldFetchAfterModal] = useState(false);
-            const [showInvitationModal, setShowInvitationModal] = useState(false);
-            const [selectedCandidates, setSelectedCandidates] = useState([]);
-            const [invitationMessage, setInvitationMessage] = useState({ text: '', type: '' });
+            const [shouldFetch, setShouldFetch] = useState(true);
             const [selectedTableCandidates, setSelectedTableCandidates] = useState([]);
 
+            // --- NEW: Authenticated Fetch Helper ---
+            const authenticatedFetch = useCallback(async (url, options = {}) => {
+                if (!authToken) {
+                    console.error("No auth token found. Logging out.");
+                    handleLogout();
+                    throw new Error('Not authenticated');
+                }
 
-            const getApiEndpoint = () => {
-                return apiBaseUrl ? `${apiBaseUrl}/api/candidates` : '/api/candidates';
-            };
+                const headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${authToken}`
+                };
 
-            const fetchCandidates = async () => {
+                if (!(options.body instanceof FormData)) {
+                    headers['Content-Type'] = 'application/json';
+                }
+
+                const response = await fetch(url, { ...options, headers });
+
+                if (response.status === 401 || response.status === 403) {
+                    handleLogout();
+                    throw new Error('Token expired or invalid');
+                }
+                return response;
+            }, [authToken]);
+
+
+            const fetchCandidates = useCallback(async () => {
+                if (!authToken) return; // Don't fetch if not authenticated
                 setLoading(true);
                 setError(null);
                 try {
-                    const apiUrl = getApiEndpoint();
-                    const response = await fetch(apiUrl);
+                    const apiUrl = `${apiBaseUrl}/api/candidates`;
+                    const response = await authenticatedFetch(apiUrl);
 
                     if (!response.ok) {
                         throw new Error('فشل جلب البيانات من الخادم.');
@@ -132,17 +213,26 @@
                 } finally {
                     setLoading(false);
                 }
+            }, [apiBaseUrl, authenticatedFetch, authToken]);
+
+            useEffect(() => {
+                if (shouldFetch && authToken) {
+                    fetchCandidates();
+                    setShouldFetch(false);
+                }
+            }, [shouldFetch, authToken, fetchCandidates]);
+
+            // --- NEW: Auth handling functions ---
+            const handleLoginSuccess = (token) => {
+                localStorage.setItem('adminToken', token);
+                setAuthToken(token);
+                setShouldFetch(true);
             };
 
-            // Correct useEffect to fetch data on mount and after modal is closed
-            useEffect(() => {
-                const savedUrl = localStorage.getItem('API_BASE_URL');
-                if (savedUrl) {
-                    setApiBaseUrl(savedUrl);
-                    setConfigInput(savedUrl);
-                }
-                fetchCandidates();
-            }, [shouldFetchAfterModal]); // Depend on shouldFetchAfterModal state
+            const handleLogout = () => {
+                localStorage.removeItem('adminToken');
+                setAuthToken(null);
+            };
 
             const stats = useMemo(() => {
                 const total = candidates.length;
@@ -155,13 +245,8 @@
                 const pendingPercentage = total > 0 ? ((pending / total) * 100).toFixed(0) : 0;
 
                 return {
-                    total,
-                    accepted,
-                    rejected,
-                    pending,
-                    acceptedPercentage,
-                    rejectedPercentage,
-                    pendingPercentage
+                    total, accepted, rejected, pending,
+                    acceptedPercentage, rejectedPercentage, pendingPercentage
                 };
             }, [candidates]);
 
@@ -184,12 +269,16 @@
                 setLoading(true);
 
                 try {
-                    const response = await fetch(`${apiBaseUrl}/api/candidates/${id}`, {
+                    const response = await authenticatedFetch(`${apiBaseUrl}/api/candidates/${id}`, {
                         method: 'DELETE',
+                         headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}` // This line adds the token
+                        },
                     });
 
                     if (response.status === 200) {
-                        fetchCandidates(); // Refresh the list
+                        setShouldFetch(true);
                     } else {
                         setError('فشل حذف المرشح.');
                     }
@@ -200,79 +289,9 @@
                     setCandidateToDelete(null);
                 }
             };
-            // This now just toggles the state, and the useEffect will handle the fetch
+
             const handleRefresh = () => {
-                setShouldFetchAfterModal(prev => !prev);
-            };
-
-            const handleConfigSave = () => {
-                setApiBaseUrl(configInput);
-                localStorage.setItem('API_BASE_URL', configInput);
-                setShowConfigModal(false);
-            };
-
-            const handleConfigReset = () => {
-                const defaultUrl = 'http://localhost:3000';
-                setConfigInput(defaultUrl);
-                setApiBaseUrl(defaultUrl);
-                localStorage.setItem('API_BASE_URL', defaultUrl);
-            };
-
-            // NEW: Invitation Modal Logic
-            const handleInvitationToggle = () => {
-                setShowInvitationModal(!showInvitationModal);
-                if (!showInvitationModal) {
-                    setInvitationMessage({ text: '', type: '' });
-                    // Filter for pending candidates to show in the modal
-                    const pendingCandidates = candidates.filter(c => c.state === 'Pending' && c.email);
-                    setSelectedCandidates(pendingCandidates.map(c => ({ ...c, isSelected: false })));
-                }
-            };
-
-            const handleCandidateSelect = (id) => {
-                setSelectedCandidates(prev =>
-                    prev.map(c => c.candidate_id === id ? { ...c, isSelected: !c.isSelected } : c)
-                );
-            };
-
-            const handleSendInvitations = async () => {
-                const recipients = selectedCandidates
-                    .filter(c => c.isSelected)
-                    .map(c => c.email);
-
-                if (recipients.length === 0) {
-                    setInvitationMessage({ text: 'الرجاء اختيار مرشح واحد على الأقل.', type: 'error' });
-                    return;
-                }
-
-                setInvitationMessage({ text: 'جاري إرسال الدعوات...', type: 'info' });
-
-                try {
-                    const response = await fetch(`${apiBaseUrl}/api/invitations/send-emails`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            recipients: recipients,
-                            subject: 'دعوة للانضمام إلى الحدث',
-                            htmlBody: `<p>مرحباً، لقد تلقيت دعوة لحضور حدثنا. يرجى تسجيل استجابتك.</p>` // Customize this later
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('فشل إرسال الدعوات.');
-                    }
-
-                    const result = await response.json();
-
-                    if (result.status === 'SUCCESS') {
-                        setInvitationMessage({ text: result.message, type: 'success' });
-                        fetchCandidates();
-                    } else {
-                        setInvitationMessage({ text: result.message, type: 'error' });
-                    }
-                } catch (err) {
-                    setInvitationMessage({ text: 'فشل الاتصال بالخادم. يرجى المحاولة لاحقاً.', type: 'error' });
-                }
+                setShouldFetch(true);
             };
 
             const handleTableCandidateSelect = (id) => {
@@ -295,19 +314,22 @@
             };
             const handleSendInvitationsFromTable = async () => {
                 const candidateIds = selectedTableCandidates;
-                const eventId = "d2e239f6-17b2-4d2d-8b01-38e9d3a77610"; // Placeholder event ID, you should get this dynamically
+                const eventId = "d2e239f6-17b2-4d2d-8b01-38e9d3a77610";
 
                 if (candidateIds.length === 0) {
                     alert('الرجاء اختيار مرشح واحد على الأقل لإرسال الدعوة.');
                     return;
                 }
 
-                setIsSendingInvitations(true); // Start loading
+                setIsSendingInvitations(true);
 
                 try {
-                    const response = await fetch(`${apiBaseUrl}/api/invitations/send-emails`, {
+                    const response = await authenticatedFetch(`${apiBaseUrl}/api/invitations/send`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}` // This line adds the token
+                        },
                         body: JSON.stringify({
                             candidateIds: candidateIds,
                             eventId: eventId
@@ -317,16 +339,12 @@
                     const result = await response.json();
                     if (response.ok && result.status === 'SUCCESS') {
                         setInvitationResult({
-                            sent: candidateIds.length - result.excluded_recipients.length,
-                            failed: result.excluded_recipients.length,
+                            sent: candidateIds.length - (result.excluded_recipients?.length || 0),
+                            failed: result.excluded_recipients?.length || 0,
                             type: 'success'
                         });
                     } else {
-                        setInvitationResult({
-                            sent: 0,
-                            failed: candidateIds.length,
-                            type: 'error'
-                        });
+                        throw new Error(result.message || 'Failed to send');
                     }
                 } catch (err) {
                     setInvitationResult({
@@ -336,22 +354,19 @@
                     });
                     console.error("Error sending invitations:", err);
                 } finally {
-                    setIsSendingInvitations(false); // End loading
+                    setIsSendingInvitations(false);
                     setSelectedTableCandidates([]);
-                    setShowInvitationResultModal(true); // Show the result modal
+                    setShowInvitationResultModal(true);
                 }
             };
 
-            // Function to close the modal and trigger a refresh
             const closeInvitationResultModal = () => {
                 setShowInvitationResultModal(false);
-                setShouldFetchAfterModal(prev => !prev); // This will trigger the useEffect
+                setShouldFetch(true);
             };
 
-            // NEW: Function to copy the registration link
             const handleCopyLink = () => {
                 const registrationLink = `${window.location.origin}/register.html`;
-                // Use document.execCommand for better compatibility in iframes
                 const el = document.createElement('textarea');
                 el.value = registrationLink;
                 document.body.appendChild(el);
@@ -360,11 +375,9 @@
                 document.body.removeChild(el);
 
                 setCopyStatus(true);
-                setTimeout(() => setCopyStatus(false), 2000); // Reset after 2 seconds
+                setTimeout(() => setCopyStatus(false), 2000);
             };
 
-
-            // Custom modal component for showing results
             const InvitationResultModal = ({ result, onClose }) => {
                 const isSuccess = result.type === 'success';
                 const messageTitle = isSuccess ? 'تم الإرسال بنجاح' : 'فشل الإرسال';
@@ -459,7 +472,7 @@
                     'null': "bg-gray-100 text-gray-800"
                 };
 
-                const normalizedStatus = status === null ? 'null' : status;
+                const normalizedStatus = status === null ? 'null' : (status ? status.toLowerCase() : 'null');
                 const displayStatus = statusTextMap[normalizedStatus] || statusTextMap['null'];
                 const badgeClass = statusClasses[normalizedStatus] || statusClasses['null'];
 
@@ -471,10 +484,16 @@
                     <div className="flex justify-center mb-10 bg-white rounded-xl">
                         <img src="images/ICCD-Logo-01.png" alt="ICCD Logo" className="h-auto object-contain p-4" />
                     </div>
-                   <nav className="font-cairo space-y-2">
+                    <nav className="font-cairo space-y-2">
                         <a href="#" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">لوحة التحكم</a>
                         <a href="/institutes.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">قائمة المؤسسات</a>
                     </nav>
+                    <div className="mt-auto">
+                        <button onClick={handleLogout} className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                            <i className="fas fa-sign-out-alt ml-2"></i>
+                            تسجيل الخروج
+                        </button>
+                    </div>
                 </aside>
             );
             const DeleteConfirmationModal = ({ item, type, onClose, onConfirm }) => {
@@ -482,20 +501,14 @@
                 const [canConfirm, setCanConfirm] = useState(false);
 
                 useEffect(() => {
-                    const timer = setInterval(() => {
-                        setCountdown(prev => prev - 1);
-                    }, 1000);
-
-                    const enableButtonTimer = setTimeout(() => {
+                    if (countdown > 0) {
+                        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                        return () => clearTimeout(timer);
+                    } else {
                         setCanConfirm(true);
-                    }, 5000);
+                    }
+                }, [countdown]);
 
-                    return () => {
-                        clearInterval(timer);
-                        clearTimeout(enableButtonTimer);
-                    };
-                }, []);
-                
                 const itemType = type === 'candidate' ? 'مرشح' : 'مؤسسة';
 
                 return (
@@ -524,6 +537,11 @@
                 );
             };
 
+            // --- NEW: Conditional Rendering based on Auth Token ---
+            if (!authToken) {
+                return <LoginModal onLoginSuccess={handleLoginSuccess} />;
+            }
+
             return (
                 <div className="flex h-screen font-cairo bg-[#1b2a39]" dir="rtl">
                     <Sidebar />
@@ -538,7 +556,7 @@
                             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                                 <h1 className="text-3xl font-bold text-[#f1f2f2] font-cardo">لوحة تحكم</h1>
                                 <div className="flex gap-2">
-                                     <button
+                                    <button
                                         onClick={handleCopyLink}
                                         className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg flex items-center transition-colors"
                                     >
@@ -564,11 +582,15 @@
                                             <p className="text-sm text-red-700">
                                                 خطأ في تحميل البيانات: {error}
                                             </p>
-                                            <p className="text-sm mt-1">
-                                                تأكد من أن خادمك يعمل بشكل صحيح وأن نقطة وصول API صحيحة.
-                                            </p>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {loading && (
+                                <div className="text-center p-10 text-white">
+                                    <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mx-auto"></div>
+                                    <p className="mt-4">جاري تحميل البيانات...</p>
                                 </div>
                             )}
 
@@ -645,6 +667,7 @@
                                                         <th scope="col" className="px-6 py-3">المؤسسة</th>
                                                         <th scope="col" className="px-6 py-3">التواصل</th>
                                                         <th scope="col" className="px-6 py-3">الحالة</th>
+                                                        <th scope="col" className="px-6 py-3">إجراءات</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -664,7 +687,7 @@
                                                                 </td>
                                                                 <td className="px-6 py-4">
                                                                     <div>{candidate.institute || ''}</div>
-                                                                     <div>{candidate.position || ''}</div>
+                                                                    <div>{candidate.position || ''}</div>
                                                                     <div className="text-xs text-gray-500">{candidate.country || ''}</div>
                                                                 </td>
                                                                 <td className="px-6 py-4">
@@ -686,7 +709,7 @@
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                                            <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                                                 <i className="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
                                                                 <p className="text-lg">لا يوجد مرشحون يطابقون المرشحات الحالية</p>
                                                             </td>
@@ -702,7 +725,7 @@
                                     </div>
                                 </>
                             )}
-                            
+
                             {showDeleteModal && (
                                 <DeleteConfirmationModal
                                     item={candidateToDelete}

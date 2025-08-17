@@ -61,7 +61,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
         const MenuIcon = (props) => (
             <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -70,6 +70,9 @@
         );
 
         const App = () => {
+            // --- NEW: Authentication State ---
+            const [authToken, setAuthToken] = useState(localStorage.getItem('adminToken'));
+
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [institutes, setInstitutes] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -87,12 +90,46 @@
             });
             const [apiBaseUrl, setApiBaseUrl] = useState('https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net');
 
-            const fetchInstitutes = async () => {
+            // --- NEW: Auth handling function ---
+            const handleLogout = () => {
+                localStorage.removeItem('adminToken');
+                setAuthToken(null);
+                window.location.href = '/'; // Redirect to index.html
+            };
+            
+            // --- NEW: Authenticated Fetch Helper ---
+            const authenticatedFetch = useCallback(async (url, options = {}) => {
+                const currentToken = localStorage.getItem('adminToken');
+                if (!currentToken) {
+                    handleLogout();
+                    throw new Error('Not authenticated');
+                }
+
+                const headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${currentToken}`
+                };
+
+                if (!(options.body instanceof FormData)) {
+                    headers['Content-Type'] = 'application/json';
+                }
+
+                const response = await fetch(url, { ...options, headers });
+
+                if (response.status === 401 || response.status === 403) {
+                    handleLogout();
+                    throw new Error('Token expired or invalid');
+                }
+                return response;
+            }, []);
+
+
+            const fetchInstitutes = useCallback(async () => {
                 setLoading(true);
                 setError(null);
                 try {
                     const apiUrl = `${apiBaseUrl}/api/institutes`;
-                    const response = await fetch(apiUrl);
+                    const response = await authenticatedFetch(apiUrl);
 
                     if (!response.ok) {
                         throw new Error('فشل جلب البيانات من الخادم.');
@@ -111,11 +148,19 @@
                 } finally {
                     setLoading(false);
                 }
-            };
+            }, [apiBaseUrl, authenticatedFetch]);
 
+            // --- NEW: Check for token on component mount ---
             useEffect(() => {
-                fetchInstitutes();
-            }, [showAddInstituteModal]);
+                const token = localStorage.getItem('adminToken');
+                if (!token) {
+                    window.location.href = '/'; // Redirect if no token
+                } else {
+                    setAuthToken(token);
+                    fetchInstitutes();
+                }
+            }, [fetchInstitutes]);
+
 
             const handleDownloadQrCode = (institute) => {
                 if (!institute.registration_token) {
@@ -125,14 +170,11 @@
 
                 const registrationUrl = `${window.location.origin}/custom-register.html?token=${institute.registration_token}`;
 
-                // Use the qrcode library to generate a data URL with increased size
                 QRCode.toDataURL(registrationUrl, { errorCorrectionLevel: 'H', width: 500, height: 500 }, function (err, url) {
                     if (err) {
                         console.error('Error generating QR code:', err);
                         return;
                     }
-
-                    // Create a temporary link element to trigger the download
                     const link = document.createElement('a');
                     link.href = url;
                     link.download = `${institute.institute_name}_QR.png`;
@@ -147,7 +189,6 @@
                 const institutesToDownload = institutes.filter(institute => selectedInstitutes.includes(institute.institute_id));
 
                 institutesToDownload.forEach((institute, index) => {
-                    // Slight delay to prevent browser from blocking multiple downloads
                     setTimeout(() => {
                         handleDownloadQrCode(institute);
                     }, index * 500);
@@ -158,18 +199,24 @@
                     setSelectedInstitutes([]);
                 }, institutesToDownload.length * 500 + 1000);
             };
+
             const handleDeleteInstitute = (institute) => {
                 setInstituteToDelete(institute);
                 setShowDeleteModal(true);
             };
+
             const handleConfirmDelete = async () => {
                 const id = instituteToDelete.institute_id;
                 setShowDeleteModal(false);
                 setLoading(true);
 
                 try {
-                    const response = await fetch(`${apiBaseUrl}/api/institutes/${id}`, {
+                    const response = await authenticatedFetch(`${apiBaseUrl}/api/institutes/${id}`, {
                         method: 'DELETE',
+                         headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}` // This line adds the token
+                        },
                     });
 
                     if (response.status === 200) {
@@ -221,9 +268,7 @@
                     const instituteName = institute.institute_name ? institute.institute_name.toLowerCase() : '';
 
                     const matchesSearch = instituteName.includes(searchTerm);
-
                     const matchesPriority = filters.priority === 'all' || institute.institute_priority === filters.priority;
-
                     const matchesVip = filters.isVip === 'all' || (filters.isVip === 'vip' && institute.is_vip) || (filters.isVip === 'not-vip' && !institute.is_vip);
 
                     return matchesSearch && matchesPriority && matchesVip;
@@ -242,12 +287,17 @@
                     </div>
                     <nav className="font-cairo space-y-2">
                         <a href="/" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">لوحة التحكم</a>
-                        <a href="/institutes" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">قائمة المؤسسات</a>
+                        <a href="/institutes.html" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">قائمة المؤسسات</a>
                     </nav>
+                     <div className="mt-auto">
+                         <button onClick={handleLogout} className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                            <i className="fas fa-sign-out-alt ml-2"></i>
+                            تسجيل الخروج
+                        </button>
+                    </div>
                 </aside>
             );
 
-            // NEW: Modal component for adding an institute
             const AddInstituteModal = ({ onClose, onInstituteAdded }) => {
                 const [formData, setFormData] = useState({
                     instituteName: '',
@@ -292,9 +342,12 @@
                     }
 
                     try {
-                        const response = await fetch(`${apiBaseUrl}/api/institutes`, {
+                        const response = await authenticatedFetch(`${apiBaseUrl}/api/institutes`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                             headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}` // This line adds the token
+                        },
                             body: JSON.stringify(formData)
                         });
 
@@ -389,19 +442,13 @@
                 const [canConfirm, setCanConfirm] = useState(false);
 
                 useEffect(() => {
-                    const timer = setInterval(() => {
-                        setCountdown(prev => prev - 1);
-                    }, 1000);
-
-                    const enableButtonTimer = setTimeout(() => {
+                    if (countdown > 0) {
+                        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                        return () => clearTimeout(timer);
+                    } else {
                         setCanConfirm(true);
-                    }, 5000);
-
-                    return () => {
-                        clearInterval(timer);
-                        clearTimeout(enableButtonTimer);
-                    };
-                }, []);
+                    }
+                }, [countdown]);
 
                 const itemType = type === 'candidate' ? 'مرشح' : 'مؤسسة';
 
@@ -430,7 +477,6 @@
                     </div>
                 );
             };
-            // Custom Modal component for showing success/error messages
             const CustomModal = ({ title, message, type, onClose }) => {
                 const titleColor = type === 'success' ? 'text-green-600' : 'text-red-600';
                 const buttonColor = type === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600';
@@ -457,6 +503,11 @@
                     </div>
                 );
             };
+            
+            // --- NEW: Render null while checking auth token ---
+            if (!authToken) {
+                return null; // Render nothing while redirecting
+            }
 
             return (
                 <div className="flex h-screen font-cairo bg-[#1b2a39]" dir="rtl">
@@ -496,9 +547,6 @@
                                         <div>
                                             <p className="text-sm text-red-700">
                                                 خطأ في تحميل البيانات: {error}
-                                            </p>
-                                            <p className="text-sm mt-1">
-                                                تأكد من أن خادمك يعمل بشكل صحيح وأن نقطة وصول API صحيحة.
                                             </p>
                                         </div>
                                     </div>
@@ -584,7 +632,7 @@
                                                     <th scope="col" className="px-6 py-3">النوع</th>
                                                     <th scope="col" className="px-6 py-3">الأولوية</th>
                                                     <th scope="col" className="px-6 py-3">VIP</th>
-                                                    <th scope="col" className="px-6 py-3">تنزيل QR Code</th>
+                                                    <th scope="col" className="px-6 py-3">إجراءات</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -613,15 +661,15 @@
                                                                     color={institute.is_vip ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                                                                 />
                                                             </td>
-                                                            <td className="px-6 py-4">
+                                                            <td className="px-6 py-4 space-x-4 space-x-reverse">
                                                                 <button
                                                                     onClick={() => handleDownloadQrCode(institute)}
                                                                     className="text-[#15a9b2] hover:text-[#0f7a81] transition-colors"
                                                                 >
-                                                                    <i className="fas fa-qrcode ml-2"></i>تنزيل QR Code
+                                                                    <i className="fas fa-qrcode"></i>
                                                                 </button>
+                                                                 <button onClick={() => handleDeleteInstitute(institute)} className="text-red-500 hover:text-red-700 transition-colors"><i className="fas fa-trash-alt"></i></button>
                                                             </td>
-                                                            <td className="px-6 py-4"><button onClick={() => handleDeleteInstitute(institute)} className="text-red-500 hover:text-red-700 transition-colors"><i className="fas fa-trash-alt"></i></button></td>
                                                         </tr>
                                                     ))
                                                 ) : (
