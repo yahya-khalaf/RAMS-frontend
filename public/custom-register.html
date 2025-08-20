@@ -58,13 +58,116 @@
     </style>
 </head>
 
-<body class="bg-[#f1f2f2]" style="direction: rtl; text-align: right;">
+<body class="bg-[#f1f2f2]">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        const translations = {
+            ar: {
+                title: 'تسجيل مرشح',
+                formTitle: 'تسجيل مرشح جديد',
+                formTitleFrom: 'تسجيل مرشح من',
+                formSubtitle: 'الرجاء إدخال تفاصيل المرشح الجديد في النموذج أدناه.',
+                firstName: 'الاسم الأول',
+                lastName: 'الاسم الأخير',
+                email: 'البريد الإلكتروني',
+                phoneNumber: 'رقم الهاتف',
+                position: 'الوظيفة',
+                institute: 'المؤسسة/الشركة',
+                country: 'البلد',
+                required: 'مطلوب',
+                registerButton: 'تسجيل',
+                loadingButton: 'جاري التسجيل...',
+                errorTitle: 'خطأ',
+                errorRequired: 'الرجاء ملء جميع الحقول الإلزامية.',
+                errorConflict: 'مرشح بنفس البريد الإلكتروني أو رقم الهاتف موجود بالفعل.',
+                errorGeneric: 'فشل إضافة المرشح. يرجى المحاولة لاحقاً.',
+                errorConnection: 'فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.',
+                errorInvalidToken: 'رابط التسجيل غير صالح. الرجاء التأكد من الرابط الصحيح.',
+                successTitle: 'نجاح',
+                successMessage: 'تم التسجيل بنجاح!',
+                successGreeting: `شكرًا للتسجيل! \nنتطلع إلى لقائكم في "حفل الاستقبال السنوي للغرفة الإسلامية" يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً، بقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة. \n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
+                closeButton: 'إغلاق',
+                confirmTitle: 'حفل الاستقبال السنوي للغرفة الإسلامية',
+                confirmPrompt: 'هل ترغب في تسجيل حضورك؟',
+                eventDetails: `يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً،\nبقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة.\n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
+                confirmButton: 'تسجيل الحضور',
+                cancelButton: 'إلغاء',
+                cancelMessageTitle: 'شكراً لك.',
+                cancelMessageSubtitle: 'تم إلغاء التسجيل. نأمل أن نراك في أحداثنا المستقبلية.'
+            },
+            en: {
+                title: 'Candidate Registration',
+                formTitle: 'New Candidate Registration',
+                formTitleFrom: 'Register Candidate from',
+                formSubtitle: 'Please enter the details of the new candidate in the form below.',
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                email: 'Email',
+                phoneNumber: 'Phone Number',
+                position: 'Position',
+                institute: 'Institute/Company',
+                country: 'Country',
+                required: 'Required',
+                registerButton: 'Register',
+                loadingButton: 'Registering...',
+                errorTitle: 'Error',
+                errorRequired: 'Please fill in all required fields.',
+                errorConflict: 'A candidate with the same email or phone number already exists.',
+                errorGeneric: 'Failed to add candidate. Please try again later.',
+                errorConnection: 'Failed to connect to the server. Please check your internet connection.',
+                errorInvalidToken: 'Invalid registration link. Please make sure the link is correct.',
+                successTitle: 'Success',
+                successMessage: 'Registered Successfully!',
+                successGreeting: `Thank you for your registration. We look forward to welcoming you to "ICCD Annual Reception" on Sunday, September 14, 2025, at 5:00 PM, at the Magenta Ballroom, Fairmont Nile City Hotel, Cairo\n\nEntry is available exclusively via QR code.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
+                closeButton: 'Close',
+                confirmTitle: 'ICCD Annual Reception',
+                confirmPrompt: 'Would you like to register?',
+                eventDetails: `Sunday, September 14, 2025, at 5:00 PM,\nat the Magenta Ballroom, Fairmont Nile City Hotel, Cairo.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
+                confirmButton: 'Register Attendance',
+                cancelButton: 'Cancel',
+                cancelMessageTitle: 'Thank you.',
+                cancelMessageSubtitle: 'Registration has been cancelled. We hope to see you at our future events.'
+            },
+            fr: {
+                title: 'Inscription d\'un candidat',
+                formTitle: 'Inscription d\'un nouveau candidat',
+                formTitleFrom: 'Inscrire un candidat de',
+                formSubtitle: 'Veuillez saisir les informations du nouveau candidat dans le formulaire ci-dessous.',
+                firstName: 'Prénom',
+                lastName: 'Nom',
+                email: 'Email',
+                phoneNumber: 'Numéro de téléphone',
+                position: 'Poste',
+                institute: 'Institut/Entreprise',
+                country: 'Pays',
+                required: 'Requis',
+                registerButton: 'S\'inscrire',
+                loadingButton: 'Inscription en cours...',
+                errorTitle: 'Erreur',
+                errorRequired: 'Veuillez remplir tous les champs obligatoires.',
+                errorConflict: 'Un candidat avec le même email ou numéro de téléphone existe déjà.',
+                errorGeneric: 'Échec de l\'ajout du candidat. Veuillez réessayer plus tard.',
+                errorConnection: 'La connexion au serveur a échoué. Veuillez vérifier votre connexion Internet.',
+                errorInvalidToken: 'Lien d\'inscription invalide. Veuillez vous assurer que le lien est correct.',
+                successTitle: 'Succès',
+                successMessage: 'Inscription réussie !',
+                successGreeting: `Merci pour votre inscription. Nous nous réjouissons de vous accueillir à « la Réception Annuelle de la CICD », qui aura lieu le dimanche 14 septembre 2025 à 17h00, à la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nL'entrée est disponible exclusively via QR code.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
+                closeButton: 'Fermer',
+                confirmTitle: 'Réception Annuelle de la CICD',
+                confirmPrompt: 'Souhaitez-vous vous inscrire ?',
+                eventDetails: `Le dimanche 14 septembre 2025 à 17h00,\nà la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
+                confirmButton: 'Confirmer l\'inscription',
+                cancelButton: 'Annuler',
+                cancelMessageTitle: 'Merci.',
+                cancelMessageSubtitle: 'L\'inscription a été annulée. Nous espérons vous voir lors de nos prochains événements.'
+            }
+        };
+
         const App = () => {
+            const [language, setLanguage] = useState('ar');
             const [formData, setFormData] = useState({
                 firstName: '',
                 lastName: '',
@@ -72,7 +175,8 @@
                 institute: '',
                 country: '',
                 phoneNumber: '',
-                email: ''
+                email: '',
+                language: 'ar'
             });
 
             const [instituteData, setInstituteData] = useState(null);
@@ -83,21 +187,34 @@
             const [pageLoading, setPageLoading] = useState(true);
             const [showConfirmation, setShowConfirmation] = useState(true);
             const [showCancelledMessage, setShowCancelledMessage] = useState(false);
-            const [registrationSuccess, setRegistrationSuccess] = useState(false); // NEW: State for successful registration
+            const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
             useEffect(() => {
-                // Extract the token from the URL query parameters
+                const browserLang = navigator.language.split('-')[0];
+                const newLang = ['ar', 'en', 'fr'].includes(browserLang) ? browserLang : 'en';
+                changeLanguage(newLang);
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const token = urlParams.get('token');
 
                 if (token) {
                     fetchInstituteData(token);
                 } else {
-                    // If no token is provided, this page acts like the generic register page
                     setPageLoading(false);
                 }
             }, []);
+            
+            const changeLanguage = (lang) => {
+                setLanguage(lang);
+                setFormData(prev => ({ ...prev, language: lang }));
+                document.documentElement.lang = lang;
+                document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+                document.body.style.textAlign = lang === 'ar' ? 'right' : 'left';
+                document.title = translations[lang].title;
+            };
 
+            const t = (key) => translations[language][key] || key;
+            
             const fetchInstituteData = async (token) => {
                 setPageLoading(true);
                 try {
@@ -112,50 +229,30 @@
                             instituteId: result.data.institute_id
                         }));
                     } else {
-                        // Handle error or invalid token
                         console.error('Failed to fetch institute data:', result.message);
-                        showCustomModal('خطأ', 'رابط التسجيل غير صالح. الرجاء التأكد من الرابط الصحيح.', 'error');
+                        showCustomModal(t('errorTitle'), t('errorInvalidToken'), 'error');
                     }
                 } catch (error) {
                     console.error('Error fetching institute data:', error);
-                    showCustomModal('خطأ في الاتصال', 'فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.', 'error');
+                    showCustomModal(t('errorTitle'), t('errorConnection'), 'error');
                 } finally {
                     setPageLoading(false);
                 }
             };
-            
-            const handleConfirm = () => {
-                setShowConfirmation(false);
-            };
 
-            const handleCancel = () => {
-                setShowConfirmation(false);
-                setShowCancelledMessage(true);
-            };
-
-            const handleChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
-            };
-
-            const showCustomModal = (title, msg, type) => {
-                setMessage({ text: msg, type });
-                setShowModal(true);
-            };
-
-            const closeModal = () => {
-                setShowModal(false);
-                setMessage({ text: '', type: '' });
-            };
+            const handleConfirm = () => setShowConfirmation(false);
+            const handleCancel = () => { setShowConfirmation(false); setShowCancelledMessage(true); };
+            const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
+            const showCustomModal = (title, msg, type) => { setMessage({ text: msg, type }); setShowModal(true); };
+            const closeModal = () => { setShowModal(false); setMessage({ text: '', type: '' }); };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setLoading(true);
 
-                // Simple client-side validation for required fields
                 const { firstName, lastName, phoneNumber, email } = formData;
                 if (!firstName || !lastName || !phoneNumber || !email) {
-                    showCustomModal('خطأ', 'الرجاء ملء جميع الحقول الإلزامية.', 'error');
+                    showCustomModal(t('errorTitle'), t('errorRequired'), 'error');
                     setLoading(false);
                     return;
                 }
@@ -170,23 +267,36 @@
                     const result = await response.json();
 
                     if (response.status === 201) {
-                        setRegistrationSuccess(true); // NEW: Set state to true on success
+                        setRegistrationSuccess(true);
                     } else if (response.status === 409) {
-                        showCustomModal('خطأ', 'مرشح بنفس البريد الإلكتروني أو رقم الهاتف موجود بالفعل.', 'error');
+                        showCustomModal(t('errorTitle'), t('errorConflict'), 'error');
                     } else if (response.status === 400) {
-                        showCustomModal('خطأ', result.message, 'error');
+                        showCustomModal(t('errorTitle'), result.message, 'error');
                     } else {
-                        showCustomModal('خطأ', 'فشل إضافة المرشح. يرجى المحاولة لاحقاً.', 'error');
+                        showCustomModal(t('errorTitle'), t('errorGeneric'), 'error');
                     }
                 } catch (error) {
                     console.error('Error submitting form:', error);
-                    showCustomModal('خطأ في الاتصال', 'فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.', 'error');
+                    showCustomModal(t('errorTitle'), t('errorConnection'), 'error');
                 } finally {
                     setLoading(false);
                 }
             };
+            
+            const LanguageSwitcher = () => (
+                <div className="flex justify-center items-center space-x-4 mb-4">
+                    {['ar', 'en', 'fr'].map(lang => (
+                        <button
+                            key={lang}
+                            onClick={() => changeLanguage(lang)}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${language === lang ? 'bg-[#15a9b2] text-white' : 'bg-white text-gray-700 hover:bg-gray-200'}`}
+                        >
+                            {lang.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            );
 
-            // Modal component to be used inside the App component
             const CustomModal = ({ title, message, type, onClose }) => {
                 const titleColor = type === 'success' ? 'text-green-600' : 'text-red-600';
                 const buttonColor = type === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600';
@@ -201,12 +311,12 @@
                                 </button>
                             </div>
                             <p className="text-gray-700 mb-6">{message}</p>
-                            <div className="text-left">
+                            <div className={language === 'ar' ? "text-left" : "text-right"}>
                                 <button
                                     onClick={onClose}
                                     className={`px-6 py-2 text-white rounded-lg transition-colors ${buttonColor}`}
                                 >
-                                    إغلاق
+                                    {t('closeButton')}
                                 </button>
                             </div>
                         </div>
@@ -222,44 +332,40 @@
                         </div>
                     );
                 }
-                
+
                 if (registrationSuccess) {
                     return (
-                        <div className="text-center p-12">
+                        <div className="text-center p-6 sm:p-12">
                             <i className="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
                             <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-4">
-                                تم التسجيل بنجاح!
+                                {t('successMessage')}
                             </h1>
-                            <p className="text-gray-600 font-cairo">
-                                شكراً لتسجيلك. نأمل أن نراك في الحدث قريباً.
+                            <p className="text-gray-600 font-cairo whitespace-pre-line">
+                                {t('successGreeting')}
                             </p>
                         </div>
                     );
                 }
-
+                
                 if (showConfirmation) {
                     return (
                         <div className="text-center">
-                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-4">
-                                هل ترغب في تسجيل حضورك للحدث؟
-                            </h1>
-                            <p className="text-gray-600 font-cairo mb-8">
-                                <span className="font-bold text-[#1b2a39]">{instituteData.institute_name}</span>
-                                <br />
-                                الرجاء تأكيد حضورك للمتابعة إلى نموذج التسجيل.
-                            </p>
-                            <div className="flex justify-center space-x-4 space-x-reverse">
+                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-2">{t('confirmTitle')}</h1>
+                            {instituteData && <p className="text-lg font-semibold text-gray-700 mb-2">{t('formTitleFrom')} {instituteData.institute_name}</p>}
+                            <p className="text-gray-600 font-cairo mb-4 whitespace-pre-line">{t('eventDetails')}</p>
+                            <p className="text-gray-800 font-cairo font-bold mb-8">{t('confirmPrompt')}</p>
+                            <div className={`flex justify-center space-x-4 ${language === 'ar' ? 'space-x-reverse' : ''}`}>
                                 <button
                                     onClick={handleConfirm}
                                     className="px-6 py-3 bg-[#15a9b2] text-white rounded-lg font-bold hover:bg-[#0f7a81] transition-colors"
                                 >
-                                    تأكيد
+                                    {t('confirmButton')}
                                 </button>
                                 <button
                                     onClick={handleCancel}
                                     className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg font-bold hover:bg-gray-400 transition-colors"
                                 >
-                                    إلغاء
+                                    {t('cancelButton')}
                                 </button>
                             </div>
                         </div>
@@ -270,10 +376,10 @@
                     return (
                         <div className="text-center p-12">
                             <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-4">
-                                شكراً لك.
+                                {t('cancelMessageTitle')}
                             </h1>
                             <p className="text-gray-600 font-cairo">
-                                تم إلغاء التسجيل. نأمل أن نراك في أحداثنا المستقبلية.
+                                {t('cancelMessageSubtitle')}
                             </p>
                         </div>
                     );
@@ -282,50 +388,50 @@
                 return (
                     <>
                         <h1 className="text-2xl font-bold text-[#1b2a39] text-center font-cardo mb-2">
-                            تسجيل مرشح {instituteData ? `من ${instituteData.institute_name}` : 'جديد'}
+                            {instituteData ? `${t('formTitleFrom')} ${instituteData.institute_name}` : t('formTitle')}
                         </h1>
                         <p className="text-gray-600 text-center font-cairo mb-8">
-                            الرجاء إدخال تفاصيل المرشح الجديد في النموذج أدناه.
+                            {t('formSubtitle')}
                         </p>
                         <form onSubmit={handleSubmit} className="space-y-4 font-cairo">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">الاسم الأول <span className="text-red-500">*</span></label>
-                                    <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">{t('firstName')} <span className="text-red-500">*</span></label>
+                                    <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                                 </div>
                                 <div>
-                                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">الاسم الأخير <span className="text-red-500">*</span></label>
-                                    <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">{t('lastName')} <span className="text-red-500">*</span></label>
+                                    <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                                 </div>
                             </div>
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">البريد الإلكتروني <span className="text-red-500">*</span></label>
-                                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t('email')} <span className="text-red-500">*</span></label>
+                                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                             </div>
                             <div>
-                                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">رقم الهاتف <span className="text-red-500">*</span></label>
-                                <input type="tel" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">{t('phoneNumber')} <span className="text-red-500">*</span></label>
+                                <input type="tel" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                             </div>
                             <div>
-                                <label htmlFor="position" className="block text-sm font-medium text-gray-700">الوظيفة</label>
-                                <input type="text" id="position" name="position" value={formData.position} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                <label htmlFor="position" className="block text-sm font-medium text-gray-700">{t('position')}</label>
+                                <input type="text" id="position" name="position" value={formData.position} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="institute" className="block text-sm font-medium text-gray-700">المؤسسة/الشركة</label>
+                                    <label htmlFor="institute" className="block text-sm font-medium text-gray-700">{t('institute')}</label>
                                     <input 
                                         type="text" 
                                         id="institute" 
                                         name="institute" 
                                         value={formData.institute} 
                                         onChange={handleChange} 
-                                        className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" 
+                                        className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none bg-gray-100" 
                                         disabled={!!instituteData}
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="country" className="block text-sm font-medium text-gray-700">البلد</label>
-                                    <input type="text" id="country" name="country" value={formData.country} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none text-right" />
+                                    <label htmlFor="country" className="block text-sm font-medium text-gray-700">{t('country')}</label>
+                                    <input type="text" id="country" name="country" value={formData.country} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none" />
                                 </div>
                             </div>
                             <button
@@ -336,7 +442,7 @@
                                 {loading ? (
                                     <div className="loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-6 w-6 mx-auto"></div>
                                 ) : (
-                                    "تسجيل"
+                                    t('registerButton')
                                 )}
                             </button>
                         </form>
@@ -345,7 +451,8 @@
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 font-cairo">
+                    <LanguageSwitcher />
                     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 w-full max-w-lg">
                         <div className="w-45 mb-6 justify-center mx-auto">
                             <div className="rounded-xl w-full h-full flex items-center justify-center text-gray-500 text-sm">
@@ -356,7 +463,7 @@
                     </div>
                     {showModal && (
                         <CustomModal
-                            title={message.type === 'success' ? 'نجاح' : 'خطأ'}
+                            title={message.type === 'success' ? t('successTitle') : t('errorTitle')}
                             message={message.text}
                             type={message.type}
                             onClose={closeModal}

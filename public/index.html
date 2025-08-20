@@ -318,10 +318,16 @@
                         phone.includes(searchTerm) :
                         true;
 
+                    // --- FIX START ---
                     let matchesStatus = true;
-                    if (filters.status === 'null') matchesStatus = candidate.state === null;
-                    else if (filters.status === 'Pending') matchesStatus = candidate.state && candidate.state.toLowerCase() === 'pending';
-                    else if (filters.status === 'Accepted' || filters.status === 'Rejected') matchesStatus = candidate.state === filters.status;
+                    if (filters.status !== 'all') {
+                        if (filters.status === 'null') {
+                            matchesStatus = candidate.state === null;
+                        } else {
+                            matchesStatus = candidate.state && candidate.state.toLowerCase() === filters.status.toLowerCase();
+                        }
+                    }
+                    // --- FIX END ---
                     
                     return matchesSearch && matchesStatus;
                 });
@@ -386,8 +392,8 @@
             const StatusBadge = ({ status }) => {
                 const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block font-cairo";
                 const statusMap = {
-                    'Accepted': { text: "تم التأكيد", style: "bg-green-100 text-green-800" },
-                    'Rejected': { text: "تم الرفض", style: "bg-red-100 text-red-800" },
+                    'accepted': { text: "تم التأكيد", style: "bg-green-100 text-green-800" },
+                    'rejected': { text: "تم الرفض", style: "bg-red-100 text-red-800" },
                     'pending': { text: "قيد الانتظار", style: "bg-yellow-100 text-yellow-800" },
                     'null': { text: "غير مدعو", style: "bg-gray-100 text-gray-800" }
                 };
@@ -482,7 +488,7 @@
                                                         <option value="all">كل الحالات</option>
                                                         <option value="Accepted">مقبول</option>
                                                         <option value="Rejected">مرفوض</option>
-                                                        <option value="Pending">قيد الانتظار</option>
+                                                        <option value="pending">قيد الانتظار</option> 
                                                         <option value="null">غير مدعو</option>
                                                     </select>
                                                 </div>

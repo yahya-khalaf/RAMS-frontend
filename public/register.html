@@ -51,9 +51,10 @@
                 successMessage: 'تم التسجيل بنجاح!',
                 successGreeting: `شكرًا للتسجيل! \nنتطلع إلى لقائكم في "حفل الاستقبال السنوي للغرفة الإسلامية" يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً، بقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة. \n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
                 closeButton: 'إغلاق',
-                confirmTitle: 'هل ترغب في تسجيل حضورك لـ "حفل الاستقبال السنوي للغرفة الإسلامية"؟',
-                confirmSubtitle: 'الرجاء تأكيد حضورك للمتابعة إلى نموذج التسجيل.',
-                confirmButton: 'تأكيد',
+                confirmTitle: 'حفل الاستقبال السنوي للغرفة الإسلامية',
+                confirmPrompt: 'هل ترغب في تسجيل حضورك؟',
+                eventDetails: `يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً،\nبقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة.\n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
+                confirmButton: 'تسجيل الحضور',
                 cancelButton: 'إلغاء',
                 cancelMessageTitle: 'شكراً لك.',
                 cancelMessageSubtitle: 'تم إلغاء التسجيل. نأمل أن نراك في أحداثنا المستقبلية.'
@@ -81,9 +82,10 @@
                 successMessage: 'Registered Successfully!',
                 successGreeting: `Thank you for your registration. We look forward to welcoming you to "ICCD Annual Reception" on Sunday, September 14, 2025, at 5:00 PM, at the Magenta Ballroom, Fairmont Nile City Hotel, Cairo\n\nEntry is available exclusively via QR code.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
                 closeButton: 'Close',
-                confirmTitle: 'Would you like to register for the "ICCD Annual Reception"?',
-                confirmSubtitle: 'Please confirm your attendance to proceed to the registration form.',
-                confirmButton: 'Confirm',
+                confirmTitle: 'ICCD Annual Reception',
+                confirmPrompt: 'Would you like to register?',
+                eventDetails: `Sunday, September 14, 2025, at 5:00 PM,\nat the Magenta Ballroom, Fairmont Nile City Hotel, Cairo.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
+                confirmButton: 'Register Attendance',
                 cancelButton: 'Cancel',
                 cancelMessageTitle: 'Thank you.',
                 cancelMessageSubtitle: 'Registration has been cancelled. We hope to see you at our future events.'
@@ -111,9 +113,10 @@
                 successMessage: 'Inscription réussie !',
                 successGreeting: `Merci pour votre inscription. Nous nous réjouissons de vous accueillir à « la Réception Annuelle de la CICD », qui aura lieu le dimanche 14 septembre 2025 à 17h00, à la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nL'entrée est disponible exclusively via QR code.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
                 closeButton: 'Fermer',
-                confirmTitle: 'Souhaitez-vous vous inscrire à « la Réception Annuelle de la CICD » ?',
-                confirmSubtitle: 'Veuillez confirmer votre présence pour accéder au formulaire d\'inscription.',
-                confirmButton: 'Confirmer',
+                confirmTitle: 'Réception Annuelle de la CICD',
+                confirmPrompt: 'Souhaitez-vous vous inscrire ?',
+                eventDetails: `Le dimanche 14 septembre 2025 à 17h00,\nà la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
+                confirmButton: 'Confirmer l\'inscription',
                 cancelButton: 'Annuler',
                 cancelMessageTitle: 'Merci.',
                 cancelMessageSubtitle: 'L\'inscription a été annulée. Nous espérons vous voir lors de nos prochains événements.'
@@ -221,8 +224,9 @@
                 if (showConfirmation) {
                     return (
                         <div className="text-center">
-                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-4">{t('confirmTitle')}</h1>
-                            <p className="text-gray-600 font-cairo mb-8">{t('confirmSubtitle')}</p>
+                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-2">{t('confirmTitle')}</h1>
+                            <p className="text-gray-600 font-cairo mb-4 whitespace-pre-line">{t('eventDetails')}</p>
+                            <p className="text-gray-800 font-cairo font-bold mb-8">{t('confirmPrompt')}</p>
                             <div className={`flex justify-center space-x-4 ${language === 'ar' ? 'space-x-reverse' : ''}`}>
                                 <button onClick={handleConfirm} className="px-6 py-3 bg-[#15a9b2] text-white rounded-lg font-bold hover:bg-[#0f7a81] transition-colors">{t('confirmButton')}</button>
                                 <button onClick={handleCancel} className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg font-bold hover:bg-gray-400 transition-colors">{t('cancelButton')}</button>
