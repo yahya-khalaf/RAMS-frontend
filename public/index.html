@@ -136,7 +136,7 @@
             const handleLogout = () => {
                 localStorage.removeItem('adminToken');
                 setAuthToken(null);
-                window.location.href = 'index.html';
+                window.location.href = '/';
             };
 
             const authenticatedFetch = useCallback(async (url, options = {}) => {
@@ -406,8 +406,10 @@
                 <aside className={`fixed top-0 right-0 h-full bg-[#f1f2f2] text-[#1b2a39] w-64 p-6 transition-transform transform ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0 md:relative md:flex-shrink-0 z-20`}>
                     <div className="flex justify-center mb-10 bg-white rounded-xl"><img src="images/ICCD-Logo-01.png" alt="ICCD Logo" className="h-auto object-contain p-4" /></div>
                     <nav className="font-cairo space-y-2">
-                        <a href="#" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">لوحة التحكم</a>
+                        <a href="/" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">لوحة التحكم</a>
                         <a href="/institutes.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">قائمة المؤسسات</a>
+                        <a href="/event-dashboard.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">لوحة تحكم الحدث</a>
+
                     </nav>
                     <div className="mt-auto">
                         <button onClick={handleLogout} className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">

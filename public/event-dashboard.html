@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الحدث</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:wght@700&family=Cairo:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        .font-cardo {
+            font-family: 'Cardo', serif;
+        }
+
+        .font-cairo {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: #1b2a39;
+        }
+
+        .loader {
+            border-top-color: #15a9b2;
+            animation: spin 1s linear infinite;
+            border-radius: 50%;
+            border-style: solid;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#1b2a39]" style="direction: rtl; text-align: right;">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
+        // const API_BASE_URL  = 'http://localhost:3000';
+        const API_BASE_URL = 'https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net';
+
+        const MenuIcon = (props) => (
+            <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        );
+
+        const App = () => {
+            const [authToken, setAuthToken] = useState(localStorage.getItem('adminToken'));
+            const [attendees, setAttendees] = useState([]);
+            const [registerers, setRegisterers] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [showCreateModal, setShowCreateModal] = useState(false);
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [itemToDelete, setItemToDelete] = useState(null);
+            const [isUpdatingStatus, setIsUpdatingStatus] = useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+            const handleLogout = () => {
+                localStorage.removeItem('adminToken');
+                setAuthToken(null);
+                window.location.href = '/';
+            };
+
+            const authenticatedFetch = useCallback(async (url, options = {}) => {
+                const currentToken = localStorage.getItem('adminToken');
+                if (!currentToken) { handleLogout(); throw new Error('Not authenticated'); }
+                const headers = { ...options.headers, 'Authorization': `Bearer ${currentToken}` };
+                if (!(options.body instanceof FormData)) { headers['Content-Type'] = 'application/json'; }
+                const response = await fetch(url, { ...options, headers });
+                if (response.status === 401 || response.status === 403) { handleLogout(); throw new Error('Token expired or invalid'); }
+                return response;
+            }, []);
+
+            const fetchData = useCallback(async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const [attendeesRes, registerersRes] = await Promise.all([
+                        authenticatedFetch(`${API_BASE_URL}/api/candidates?state=Accepted`),
+                        authenticatedFetch(`${API_BASE_URL}/api/auth/registerers`)
+                    ]);
+                    const attendeesResult = await attendeesRes.json();
+                    if (attendeesResult.status === 'SUCCESS') setAttendees(attendeesResult.data);
+                    else throw new Error('فشل جلب الحضور.');
+                    const registerersResult = await registerersRes.json();
+                    if (registerersResult.status === 'SUCCESS') setRegisterers(registerersResult.data);
+                    else throw new Error('فشل جلب حسابات المسجلين.');
+                } catch (err) {
+                    setError('فشل الاتصال بالخادم.');
+                    console.error('Error fetching data:', err);
+                } finally {
+                    setLoading(false);
+                }
+            }, [authenticatedFetch]);
+
+            // FIXED: Replaced old useEffect hooks with the correct logic from institutes.html
+            useEffect(() => {
+                const token = localStorage.getItem('adminToken');
+                if (!token) {
+                    window.location.href = 'index.html';
+                } else {
+                    setAuthToken(token);
+                    fetchData(); // Initial fetch
+                    const interval = setInterval(fetchData, 30000); // Set up auto-refresh
+                    return () => clearInterval(interval); // Cleanup on component unmount
+                }
+            }, [fetchData]);
+
+            const stats = useMemo(() => {
+                const totalAccepted = attendees.length;
+                const checkedIn = attendees.filter(a => a.is_checked_in).length;
+                const checkedInPercentage = totalAccepted > 0 ? ((checkedIn / totalAccepted) * 100).toFixed(0) : 0;
+                return { totalAccepted, checkedIn, checkedInPercentage };
+            }, [attendees]);
+
+            const handleDeleteClick = (registerer) => {
+                setItemToDelete(registerer);
+                setShowDeleteModal(true);
+            };
+
+            const handleConfirmDelete = async () => {
+                try {
+                    await authenticatedFetch(`${API_BASE_URL}/api/auth/registerer/${itemToDelete.admin_id}`, { method: 'DELETE' });
+                    fetchData(); // Refresh data after delete
+                } catch (error) {
+                    setError('خطأ في حذف الحساب.');
+                } finally {
+                    setShowDeleteModal(false);
+                    setItemToDelete(null);
+                }
+            };
+
+            const handleToggleStatus = async (registerer) => {
+                const newStatus = registerer.status === 'active' ? 'suspended' : 'active';
+                setIsUpdatingStatus(registerer.admin_id);
+                try {
+                    const response = await authenticatedFetch(`${API_BASE_URL}/api/auth/registerer/${registerer.admin_id}/status`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    if (!response.ok) throw new Error('Failed to update status.');
+                    fetchData(); // Refresh data after update
+                } catch (error) {
+                    setError('خطأ في تحديث الحالة.');
+                } finally {
+                    setIsUpdatingStatus(null);
+                }
+            };
+
+            const Sidebar = () => (
+                <aside className={`fixed top-0 right-0 h-full bg-[#f1f2f2] text-[#1b2a39] w-64 p-6 transition-transform transform ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0 md:relative md:flex-shrink-0 z-20 flex flex-col`}>
+                    <div className="flex justify-center mb-10 bg-white rounded-xl"><img src="images/ICCD-Logo-01.png" alt="ICCD Logo" className="h-auto object-contain p-4" /></div>
+                    <nav className="font-cairo space-y-2 flex-grow">
+                        <a href="/" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">لوحة التحكم</a>
+                        <a href="/institutes.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">قائمة المؤسسات</a>
+                        <a href="#" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">لوحة تحكم الحدث</a>
+                    </nav>
+                    <div className="mt-auto">
+                        <button onClick={handleLogout} className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                            <i className="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+                        </button>
+                    </div>
+                </aside>
+            );
+
+            // FIXED: The component will now render null while the useEffect redirects.
+            if (!authToken) {
+                return null;
+            }
+
+            return (
+                <div className="flex h-screen font-cairo bg-[#1b2a39]" dir="rtl">
+                    <Sidebar />
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <header className="flex justify-between items-center p-4 bg-white border-b border-gray-200 md:hidden">
+                            <h1 className="text-xl font-bold text-[#1b2a39]">لوحة تحكم الحدث</h1>
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><MenuIcon className="h-6 w-6 text-gray-600" /></button>
+                        </header>
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <h1 className="text-3xl font-bold text-[#f1f2f2] font-cardo">لوحة تحكم الحدث المباشر</h1>
+                                <button onClick={fetchData} className="bg-[#15a9b2] hover:bg-[#0f7a81] text-white py-2 px-4 rounded-lg flex items-center transition-colors">
+                                    <i className="fas fa-sync-alt ml-2"></i>تحديث
+                                </button>
+                            </div>
+
+                            {loading && <div className="text-center p-10 text-white"><div className="loader h-12 w-12 mx-auto border-4"></div><p className="mt-4">جاري تحميل البيانات...</p></div>}
+                            {error && <p className="text-red-400 text-center">{error}</p>}
+
+                            {!loading && !error && (
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                        <StatCard title="إجمالي الحضور المؤكد" value={stats.totalAccepted} icon="fas fa-users" color="bg-blue-500" />
+                                        <StatCard title="الحضور المسجلين" value={stats.checkedIn} icon="fas fa-user-check" color="bg-green-500" />
+                                        <StatCard title="نسبة الحضور" value={`${stats.checkedInPercentage}%`} icon="fas fa-chart-pie" color="bg-yellow-500" />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+                                            <h2 className="text-xl font-bold text-gray-800 mb-4">قائمة الحضور</h2>
+                                            <div className="overflow-auto max-h-[60vh]">
+                                                <table className="w-full text-sm text-right text-gray-600">
+                                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                                                        <tr>
+                                                            <th className="px-6 py-3">الاسم</th>
+                                                            <th className="px-6 py-3">المؤسسة</th>
+                                                            <th className="px-6 py-3">حالة الدخول</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {attendees.map(attendee => (
+                                                            <tr key={attendee.candidate_id} className="bg-white border-b hover:bg-gray-50">
+                                                                <td className="px-6 py-4 font-bold">{attendee.first_name} {attendee.last_name}</td>
+                                                                <td className="px-6 py-4">{attendee.institute}</td>
+                                                                <td className="px-6 py-4">
+                                                                    {attendee.is_checked_in ?
+                                                                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">تم الدخول</span> :
+                                                                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">في الانتظار</span>}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white rounded-xl shadow-sm p-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h2 className="text-xl font-bold text-gray-800">حسابات المسجلين</h2>
+                                                <button onClick={() => setShowCreateModal(true)} title="إضافة حساب مسجل جديد" className="bg-green-500 text-white w-8 h-8 rounded-lg text-lg hover:bg-green-600 flex items-center justify-center">+</button>
+                                            </div>
+                                            <div className="space-y-3 max-h-[60vh] overflow-auto">
+                                                {registerers.map(reg => (
+                                                    <div key={reg.admin_id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                        <div>
+                                                            <p className="font-bold text-gray-700">{reg.username}</p>
+                                                            <p className={`text-xs font-semibold ${reg.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>{reg.status === 'active' ? 'نشط' : 'معلق'}</p>
+                                                        </div>
+                                                        <div className="flex items-center space-x-3 space-x-reverse">
+                                                            <button
+                                                                onClick={() => handleToggleStatus(reg)}
+                                                                disabled={isUpdatingStatus === reg.admin_id}
+                                                                className="text-gray-500 hover:text-blue-600 disabled:opacity-50"
+                                                                title={reg.status === 'active' ? 'تعليق الحساب' : 'إعادة تفعيل الحساب'}
+                                                            >
+                                                                {isUpdatingStatus === reg.admin_id ?
+                                                                    <div className="loader h-4 w-4 border-2"></div> :
+                                                                    <i className={`fas ${reg.status === 'active' ? 'fa-pause-circle' : 'fa-play-circle'}`}></i>
+                                                                }
+                                                            </button>
+                                                            <button onClick={() => handleDeleteClick(reg)} className="text-red-500 hover:text-red-700"><i className="fas fa-trash-alt"></i></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </main>
+                    </div>
+                    {showCreateModal && <CreateRegistererModal onClose={() => setShowCreateModal(false)} onCreated={fetchData} authenticatedFetch={authenticatedFetch} />}
+                    {showDeleteModal && <DeleteConfirmationModal item={itemToDelete} onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} />}
+                </div>
+            );
+        };
+
+        const StatCard = ({ title, value, icon, color }) => (
+            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className={`ml-4 p-3 rounded-full ${color}`}><i className={`${icon} text-white text-xl`}></i></div>
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
+                    <p className="text-3xl font-bold text-[#1b2a39] mt-1">{value}</p>
+                </div>
+            </div>
+        );
+
+        const CreateRegistererModal = ({ onClose, onCreated, authenticatedFetch }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                setError('');
+                try {
+                    const response = await authenticatedFetch(`${API_BASE_URL}/api/auth/registerer`, {
+                        method: 'POST',
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'فشل إنشاء الحساب.');
+                    onCreated();
+                    onClose();
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">إنشاء حساب مسجل جديد</h2>
+                        <form onSubmit={handleSubmit}>
+                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="اسم المستخدم" className="w-full p-3 mb-4 border rounded-lg text-right" required />
+                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="كلمة المرور" className="w-full p-3 mb-4 border rounded-lg text-right" required />
+                            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+                            <div className="flex justify-between gap-2">
+                                <button type="button" onClick={onClose} className="w-full bg-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400">إلغاء</button>
+                                <button type="submit" disabled={isLoading} className="w-full bg-[#15a9b2] text-white py-2 px-4 rounded-lg hover:bg-[#0f7a81] disabled:bg-gray-400">
+                                    {isLoading ? 'جاري الإنشاء...' : 'إنشاء'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const DeleteConfirmationModal = ({ item, onClose, onConfirm }) => {
+            const [countdown, setCountdown] = useState(5);
+            const [canConfirm, setCanConfirm] = useState(false);
+            useEffect(() => {
+                if (countdown > 0) {
+                    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                    return () => clearTimeout(timer);
+                } else {
+                    setCanConfirm(true);
+                }
+            }, [countdown]);
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm text-center">
+                        <h3 className="text-xl font-bold text-red-600 mb-4">تأكيد الحذف</h3>
+                        <p className="text-gray-700 mb-6">هل أنت متأكد أنك تريد حذف حساب المسجل <span className="font-bold">{item.username}</span>؟</p>
+                        <div className="flex justify-between gap-2">
+                            <button onClick={onClose} className="w-full bg-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400">إلغاء</button>
+                            <button onClick={onConfirm} disabled={!canConfirm} className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 disabled:bg-gray-400">
+                                {canConfirm ? 'تأكيد الحذف' : `تأكيد بعد ${countdown}`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
