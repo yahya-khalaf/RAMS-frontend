@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل مرشح</title>
+    <title>دعوة خاصة</title>
 
     <!-- React and Babel for JSX in browser -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -66,10 +66,10 @@
 
         const translations = {
             ar: {
-                title: 'تسجيل مرشح',
-                formTitle: 'تسجيل مرشح جديد',
+                title: 'دعوة خاصة',
+                formTitle: 'دعوة خاصة',
                 formTitleFrom: 'تسجيل مرشح من',
-                formSubtitle: 'الرجاء إدخال تفاصيل المرشح الجديد في النموذج أدناه.',
+                formSubtitle: 'الرجاء إدخال تفاصيل المرشح في النموذج أدناه.',
                 firstName: 'الاسم الأول',
                 lastName: 'الاسم الأخير',
                 email: 'البريد الإلكتروني',
@@ -91,18 +91,18 @@
                 successGreeting: `شكرًا للتسجيل! \nنتطلع إلى لقائكم في "حفل الاستقبال السنوي للغرفة الإسلامية" يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً، بقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة. \n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
                 closeButton: 'إغلاق',
                 confirmTitle: 'حفل الاستقبال السنوي للغرفة الإسلامية',
-                confirmPrompt: 'هل ترغب في تسجيل حضورك؟',
                 eventDetails: `يوم الأحد الموافق 14 سبتمبر 2025، في تمام الساعة 5 مساءً،\nبقاعة ماجنيتا - فندق فيرمونت نايل سيتي - القاهرة.\n\nللمزيد من التفاصيل، يُرجى التواصل عبر:\nت: ‪(+2) 01148601759‬\n  ‪(+2) 01004816779`,
-                confirmButton: 'تسجيل الحضور',
-                cancelButton: 'إلغاء',
+                confirmButton: 'قبول الدعوة',
+                cancelButton: 'رفض الدعوة',
                 cancelMessageTitle: 'شكراً لك.',
-                cancelMessageSubtitle: 'تم إلغاء التسجيل. نأمل أن نراك في أحداثنا المستقبلية.'
+                cancelMessageSubtitle: 'نأمل أن نراك في أحداثنا المستقبلية.',
+                combinedTitle: 'دعوة خاصة لحضور حفل الاستقبال السنوي للغرفة الاسلامية'
             },
             en: {
-                title: 'Candidate Registration',
-                formTitle: 'New Candidate Registration',
+                title: 'Special Invitation',
+                formTitle: 'Special Invitation',
                 formTitleFrom: 'Register Candidate from',
-                formSubtitle: 'Please enter the details of the new candidate in the form below.',
+                formSubtitle: "Please enter the candidate's details in the form below.",
                 firstName: 'First Name',
                 lastName: 'Last Name',
                 email: 'Email',
@@ -124,18 +124,18 @@
                 successGreeting: `Thank you for your registration. We look forward to welcoming you to "ICCD Annual Reception" on Sunday, September 14, 2025, at 5:00 PM, at the Magenta Ballroom, Fairmont Nile City Hotel, Cairo\n\nEntry is available exclusively via QR code.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
                 closeButton: 'Close',
                 confirmTitle: 'ICCD Annual Reception',
-                confirmPrompt: 'Would you like to register?',
                 eventDetails: `Sunday, September 14, 2025, at 5:00 PM,\nat the Magenta Ballroom, Fairmont Nile City Hotel, Cairo.\n\nFor more details, please contact:\nTel: ‪(+2) 01148601759‬\n      ‪(+2) 01004816779`,
-                confirmButton: 'Register Attendance',
-                cancelButton: 'Cancel',
+                confirmButton: 'Accept Invitation',
+                cancelButton: 'Decline Invitation',
                 cancelMessageTitle: 'Thank you.',
-                cancelMessageSubtitle: 'Registration has been cancelled. We hope to see you at our future events.'
+                cancelMessageSubtitle: 'We hope to see you at our future events.',
+                combinedTitle: 'Special Invitation to the ICCD Annual Reception'
             },
             fr: {
-                title: 'Inscription d\'un candidat',
-                formTitle: 'Inscription d\'un nouveau candidat',
+                title: 'Invitation Spéciale',
+                formTitle: 'Invitation Spéciale',
                 formTitleFrom: 'Inscrire un candidat de',
-                formSubtitle: 'Veuillez saisir les informations du nouveau candidat dans le formulaire ci-dessous.',
+                formSubtitle: 'Veuillez saisir les informations du candidat dans le formulaire ci-dessous.',
                 firstName: 'Prénom',
                 lastName: 'Nom',
                 email: 'Email',
@@ -157,12 +157,12 @@
                 successGreeting: `Merci pour votre inscription. Nous nous réjouissons de vous accueillir à « la Réception Annuelle de la CICD », qui aura lieu le dimanche 14 septembre 2025 à 17h00, à la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nL'entrée est disponible exclusively via QR code.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
                 closeButton: 'Fermer',
                 confirmTitle: 'Réception Annuelle de la CICD',
-                confirmPrompt: 'Souhaitez-vous vous inscrire ?',
                 eventDetails: `Le dimanche 14 septembre 2025 à 17h00,\nà la salle « Magenta Ballroom » de l’Hôtel de Fairmont Nile City, au Caire.\n\nPour en savoir plus, veuillez contacter :\nTél : ‪(+2) 01148601759‬\n       ‪(+2) 01004816779`,
-                confirmButton: 'Confirmer l\'inscription',
-                cancelButton: 'Annuler',
+                confirmButton: 'J\'accepte',
+                cancelButton: 'Je de\'cline',
                 cancelMessageTitle: 'Merci.',
-                cancelMessageSubtitle: 'L\'inscription a été annulée. Nous espérons vous voir lors de nos prochains événements.'
+                cancelMessageSubtitle: 'Nous espérons vous voir lors de nos prochains événements.',
+                combinedTitle: 'Invitation Spéciale à la Réception Annuelle de la CICD'
             }
         };
 
@@ -350,10 +350,8 @@
                 if (showConfirmation) {
                     return (
                         <div className="text-center">
-                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-2">{t('confirmTitle')}</h1>
-                            {instituteData && <p className="text-lg font-semibold text-gray-700 mb-2">{t('formTitleFrom')} {instituteData.institute_name}</p>}
+                            <h1 className="text-2xl font-bold text-[#1b2a39] font-cardo mb-4">{t('combinedTitle')}</h1>
                             <p className="text-gray-600 font-cairo mb-4 whitespace-pre-line">{t('eventDetails')}</p>
-                            <p className="text-gray-800 font-cairo font-bold mb-8">{t('confirmPrompt')}</p>
                             <div className={`flex justify-center space-x-4 ${language === 'ar' ? 'space-x-reverse' : ''}`}>
                                 <button
                                     onClick={handleConfirm}
@@ -388,7 +386,7 @@
                 return (
                     <>
                         <h1 className="text-2xl font-bold text-[#1b2a39] text-center font-cardo mb-2">
-                            {instituteData ? `${t('formTitleFrom')} ${instituteData.institute_name}` : t('formTitle')}
+                           {t('formTitle')}
                         </h1>
                         <p className="text-gray-600 text-center font-cairo mb-8">
                             {t('formSubtitle')}

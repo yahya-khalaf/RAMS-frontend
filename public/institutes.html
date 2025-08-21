@@ -85,7 +85,8 @@
             const [filters, setFilters] = useState({
                 priority: 'all',
                 isVip: 'all',
-                search: ''
+                search: '',
+                instituteType: 'all'
             });
             const [apiBaseUrl, setApiBaseUrl] = useState('https://registration-iccdglobal-fqc5ebegh8awh3b4.israelcentral-01.azurewebsites.net');
 
@@ -150,7 +151,7 @@
             useEffect(() => {
                 const token = localStorage.getItem('adminToken');
                 if (!token) {
-                    window.location.href = '/'; // FIX: Changed from '/' to a valid relative URL
+                    window.location.href = '/';
                 } else {
                     setAuthToken(token);
                     fetchInstitutes();
@@ -263,6 +264,10 @@
                 setTimeout(() => setCopyStatus(null), 2000); 
             };
 
+            const uniqueInstituteTypes = useMemo(() => {
+                const types = new Set(institutes.map(i => i.institute_type).filter(Boolean));
+                return ['all', ...Array.from(types)];
+            }, [institutes]);
 
             const filteredInstitutes = useMemo(() => {
                 return institutes.filter(institute => {
@@ -270,16 +275,31 @@
                     const instituteName = institute.institute_name ? institute.institute_name.toLowerCase() : '';
 
                     const matchesSearch = instituteName.includes(searchTerm);
-                    const matchesPriority = filters.priority === 'all' || institute.institute_priority === filters.priority;
-                    const matchesVip = filters.isVip === 'all' || (filters.isVip === 'vip' && institute.is_vip) || (filters.isVip === 'not-vip' && !institute.is_vip);
+                    
+                    // UPDATED: Priority filter logic to handle 'null' for unspecified priority
+                    const matchesPriority = filters.priority === 'all' || 
+                        (filters.priority === 'null' ? !institute.institute_priority : institute.institute_priority === filters.priority);
 
-                    return matchesSearch && matchesPriority && matchesVip;
+                    const matchesVip = filters.isVip === 'all' || (filters.isVip === 'vip' && institute.is_vip) || (filters.isVip === 'not-vip' && !institute.is_vip);
+                    const matchesType = filters.instituteType === 'all' || institute.institute_type === filters.instituteType;
+
+                    return matchesSearch && matchesPriority && matchesVip && matchesType;
                 });
             }, [institutes, filters]);
 
             const Badge = ({ text, color }) => {
                 const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block font-cairo";
                 return <span className={`${baseClasses} ${color}`}>{text}</span>;
+            };
+
+            // NEW: Helper to get priority display text and color
+            const getPriorityInfo = (priority) => {
+                const priorityMap = {
+                    high: { text: 'عالية', color: 'bg-red-100 text-red-800' },
+                    medium: { text: 'متوسطة', color: 'bg-yellow-100 text-yellow-800' },
+                    low: { text: 'منخفضة', color: 'bg-blue-100 text-blue-800' },
+                };
+                return priorityMap[priority] || { text: 'غير محدد', color: 'bg-gray-100 text-gray-800' };
             };
 
             const Sidebar = () => (
@@ -291,9 +311,7 @@
                         <a href="/" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">لوحة التحكم</a>
                         <a href="/institutes.html" className="flex items-center p-3 bg-[#15a9b2] text-white rounded-lg">قائمة المؤسسات</a>
                         <a href="/event-dashboard.html" className="flex items-center p-3 hover:bg-gray-200 rounded-lg">لوحة تحكم الحدث</a>
-
-                
-                        </nav>
+                    </nav>
                      <div className="mt-auto">
                          <button onClick={handleLogout} className="w-full flex items-center justify-center p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
                             <i className="fas fa-sign-out-alt ml-2"></i>
@@ -304,7 +322,8 @@
             );
 
             const AddInstituteModal = ({ onClose, onInstituteAdded }) => {
-                const [formData, setFormData] = useState({ instituteName: '', instituteType: '', institutePriority: 'low', isVip: false });
+                // UPDATED: Default priority is now an empty string for "Not Specified"
+                const [formData, setFormData] = useState({ instituteName: '', instituteType: '', institutePriority: '', isVip: false });
                 const [loading, setLoading] = useState(false);
                 const [message, setMessage] = useState({ text: '', type: '' });
                 const [showModal, setShowModal] = useState(false);
@@ -373,7 +392,9 @@
                                 </div>
                                 <div>
                                     <label htmlFor="institutePriority" className="block text-sm font-medium text-gray-700">الأولوية</label>
+                                    {/* UPDATED: Dropdown now includes a default "Not Specified" option */}
                                     <select id="institutePriority" name="institutePriority" value={formData.institutePriority} onChange={handleChange} className="mt-1 p-3 w-full border border-gray-300 rounded-lg">
+                                        <option value="">غير محدد</option>
                                         <option value="low">منخفضة</option>
                                         <option value="medium">متوسطة</option>
                                         <option value="high">عالية</option>
@@ -469,11 +490,21 @@
                                         {/* Filters */}
                                         <div className="w-full">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">تصفية حسب الأولوية</label>
+                                            {/* UPDATED: Added "Not Specified" option */}
                                             <select name="priority" onChange={handleFilterChange} value={filters.priority} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none">
                                                 <option value="all">كل الأولويات</option>
                                                 <option value="high">عالية</option>
                                                 <option value="medium">متوسطة</option>
                                                 <option value="low">منخفضة</option>
+                                                <option value="null">غير محدد</option>
+                                            </select>
+                                        </div>
+                                        <div className="w-full">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">تصفية حسب النوع</label>
+                                            <select name="instituteType" onChange={handleFilterChange} value={filters.instituteType} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15a9b2] outline-none">
+                                                {uniqueInstituteTypes.map(type => (
+                                                    <option key={type} value={type}>{type === 'all' ? 'كل الأنواع' : type}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="w-full">
@@ -510,22 +541,25 @@
                                             </thead>
                                             <tbody>
                                                 {filteredInstitutes.length > 0 ? (
-                                                    filteredInstitutes.map((institute) => (
-                                                        <tr key={institute.institute_id} className="bg-white border-b hover:bg-gray-50">
-                                                            <td className="p-3"><input type="checkbox" checked={selectedInstitutes.includes(institute.institute_id)} onChange={() => handleTableInstituteSelect(institute.institute_id)} className="h-4 w-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500" /></td>
-                                                            <td className="px-6 py-4 font-bold text-gray-800">{institute.institute_name}</td>
-                                                            <td className="px-6 py-4">{institute.institute_type}</td>
-                                                            <td className="px-6 py-4"><Badge text={institute.institute_priority === 'high' ? 'عالية' : institute.institute_priority === 'medium' ? 'متوسطة' : 'منخفضة'} color={institute.institute_priority === 'high' ? 'bg-red-100 text-red-800' : institute.institute_priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'} /></td>
-                                                            <td className="px-6 py-4"><Badge text={institute.is_vip ? 'نعم' : 'لا'} color={institute.is_vip ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} /></td>
-                                                            <td className="px-6 py-4 space-x-4 space-x-reverse">
-                                                                <button onClick={() => handleCopyUrl(institute)} title="نسخ الرابط" className="text-blue-500 hover:text-blue-700 transition-colors">
-                                                                    {copyStatus === institute.institute_id ? <span className="text-green-500">تم النسخ!</span> : <i className="fas fa-link"></i>}
-                                                                </button>
-                                                                <button onClick={() => handleDownloadQrCode(institute)} title="تنزيل QR Code" className="text-[#15a9b2] hover:text-[#0f7a81] transition-colors"><i className="fas fa-qrcode"></i></button>
-                                                                <button onClick={() => handleDeleteInstitute(institute)} title="حذف" className="text-red-500 hover:text-red-700 transition-colors"><i className="fas fa-trash-alt"></i></button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
+                                                    filteredInstitutes.map((institute) => {
+                                                        const priorityInfo = getPriorityInfo(institute.institute_priority);
+                                                        return (
+                                                            <tr key={institute.institute_id} className="bg-white border-b hover:bg-gray-50">
+                                                                <td className="p-3"><input type="checkbox" checked={selectedInstitutes.includes(institute.institute_id)} onChange={() => handleTableInstituteSelect(institute.institute_id)} className="h-4 w-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500" /></td>
+                                                                <td className="px-6 py-4 font-bold text-gray-800">{institute.institute_name}</td>
+                                                                <td className="px-6 py-4">{institute.institute_type}</td>
+                                                                <td className="px-6 py-4"><Badge text={priorityInfo.text} color={priorityInfo.color} /></td>
+                                                                <td className="px-6 py-4"><Badge text={institute.is_vip ? 'نعم' : 'لا'} color={institute.is_vip ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} /></td>
+                                                                <td className="px-6 py-4 space-x-4 space-x-reverse">
+                                                                    <button onClick={() => handleCopyUrl(institute)} title="نسخ الرابط" className="text-blue-500 hover:text-blue-700 transition-colors">
+                                                                        {copyStatus === institute.institute_id ? <span className="text-green-500">تم النسخ!</span> : <i className="fas fa-link"></i>}
+                                                                    </button>
+                                                                    <button onClick={() => handleDownloadQrCode(institute)} title="تنزيل QR Code" className="text-[#15a9b2] hover:text-[#0f7a81] transition-colors"><i className="fas fa-qrcode"></i></button>
+                                                                    <button onClick={() => handleDeleteInstitute(institute)} title="حذف" className="text-red-500 hover:text-red-700 transition-colors"><i className="fas fa-trash-alt"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
                                                 ) : (
                                                     <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500"><i className="fas fa-inbox text-4xl mb-3 text-gray-300"></i><p className="text-lg">لا يوجد معاهد تطابق المرشحات الحالية</p></td></tr>
                                                 )}
